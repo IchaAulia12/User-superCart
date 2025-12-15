@@ -17,9 +17,9 @@ export default function LoadingScreen() {
       })
     ).start();
 
-    // Navigate to login after 3 seconds
+    // Navigate to home after 3 seconds
     const timer = setTimeout(() => {
-      router.replace('/login');
+      router.replace('/home');
     }, 3000);
 
     return () => clearTimeout(timer);

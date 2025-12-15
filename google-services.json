@@ -1,0 +1,68 @@
+{
+  "project_info": {
+    "project_number": "513666249107",
+    "project_id": "myfirts-a5746",
+    "storage_bucket": "myfirts-a5746.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:513666249107:android:540d47a231717862b3b866",
+        "android_client_info": {
+          "package_name": "cartsmart.com"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "513666249107-0jpap0fi5ehnj9l01o7ifs7i6j6gnum2.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAF4bGe7ezzy_L1rVqu5seIbCrYDxtoxTM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "513666249107-0jpap0fi5ehnj9l01o7ifs7i6j6gnum2.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:513666249107:android:ffff5f8e17cf2ea5b3b866",
+        "android_client_info": {
+          "package_name": "com.example.firbis1"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "513666249107-0jpap0fi5ehnj9l01o7ifs7i6j6gnum2.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAF4bGe7ezzy_L1rVqu5seIbCrYDxtoxTM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "513666249107-0jpap0fi5ehnj9l01o7ifs7i6j6gnum2.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
