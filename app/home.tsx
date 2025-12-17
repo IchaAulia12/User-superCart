@@ -9,9 +9,11 @@ import {
   Pressable,
   Image,
   Alert,
+  Modal,
+  ScrollView,
 } from 'react-native';
 import { router } from 'expo-router';
-import { collection, doc, getDoc, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, doc, getDoc, addDoc, setDoc, serverTimestamp, query, getDocs, where } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
 import mqttService from '../mqttService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -26,13 +28,23 @@ interface Product {
 interface UserData {
   username: string;
   emailPhone: string;
+  userId?: string;
+}
+
+interface SearchResult {
+  id: string;
+  name: string;
+  price: number;
 }
 
 import { homeStyles as styles } from "../styles/homeStyles";
 
 export default function HomeScreen({ navigation }: any) {
   const [cart, setCart] = useState<Product[]>([]);
-  const [productId, setProductId] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
+  const [showSearchModal, setShowSearchModal] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
   const [cartNumber, setCartNumber] = useState(''); 
   const [savedCartNumber, setSavedCartNumber] = useState(''); 
   const [sidebarAnim] = useState(new Animated.Value(-280)); 
@@ -46,16 +58,43 @@ export default function HomeScreen({ navigation }: any) {
     loadUserData();
   }, []);
 
+  // Send payment data every second
   useEffect(() => {
-  if (!savedCartNumber || !mqttConnected || cart.length === 0) return;
+    if (!savedCartNumber || !mqttConnected || cart.length === 0) return;
 
-  const intervalId = setInterval(() => {
-    sendPaymentToMQTT();
-  }, 1000);
+    const intervalId = setInterval(() => {
+      sendPaymentToMQTT();
+    }, 1000);
 
-  return () => clearInterval(intervalId);
-}, [savedCartNumber, mqttConnected, cart]);
+    return () => clearInterval(intervalId);
+  }, [savedCartNumber, mqttConnected, cart]);
 
+  // Subscribe to payment status from cashier
+  useEffect(() => {
+    if (savedCartNumber && mqttConnected) {
+      const paymentStatusTopic = `${savedCartNumber}/payment-status`;
+      
+      const handlePaymentStatus = (data: any) => {
+        console.log('📥 Payment status received:', data);
+        
+        if (data.status === 'paid') {
+          setPaid(true);
+          Alert.alert(
+            'Pembayaran Berhasil!',
+            `Transaksi Anda telah dibayar di kasir.\n\nMetode: ${data.paymentMethod}\nTotal: Rp ${data.totalAmount.toLocaleString('id-ID')}`,
+            [{ text: 'OK' }]
+          );
+        }
+      };
+
+      mqttService.subscribe(paymentStatusTopic, handlePaymentStatus);
+      console.log(`📡 Subscribed to payment status: ${paymentStatusTopic}`);
+
+      return () => {
+        mqttService.unsubscribe(paymentStatusTopic, handlePaymentStatus);
+      };
+    }
+  }, [savedCartNumber, mqttConnected]);
 
   const loadUserData = async () => {
     try {
@@ -107,8 +146,7 @@ export default function HomeScreen({ navigation }: any) {
       const handleMQTTMessage = async (data: any) => {
         const id = processProductId(data);
         if (id) {
-          await addProductFromFirestore(id);
-          setProductId('');
+          await addProductById(id);
         }
       };
 
@@ -120,6 +158,60 @@ export default function HomeScreen({ navigation }: any) {
       };
     }
   }, [savedCartNumber, mqttConnected]);
+
+  // Search products by name
+  const searchProducts = async (searchText: string) => {
+    if (!searchText.trim()) {
+      setSearchResults([]);
+      setShowSearchModal(false);
+      return;
+    }
+
+    try {
+      setIsSearching(true);
+      const productsRef = collection(db, 'products');
+      const querySnapshot = await getDocs(productsRef);
+      
+      const results: SearchResult[] = [];
+      const searchLower = searchText.toLowerCase();
+
+      querySnapshot.forEach((doc) => {
+        const data = doc.data();
+        const productName = data.name?.toLowerCase() || '';
+        
+        // Search by name (case insensitive, partial match)
+        if (productName.includes(searchLower)) {
+          results.push({
+            id: doc.id,
+            name: data.name,
+            price: data.price,
+          });
+        }
+      });
+
+      setSearchResults(results);
+      setShowSearchModal(results.length > 0);
+    } catch (error) {
+      console.error('Error searching products:', error);
+      Alert.alert('Error', 'Gagal mencari produk');
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  // Debounce search
+  useEffect(() => {
+    const delaySearch = setTimeout(() => {
+      if (searchQuery.trim().length >= 2) {
+        searchProducts(searchQuery);
+      } else {
+        setSearchResults([]);
+        setShowSearchModal(false);
+      }
+    }, 300);
+
+    return () => clearTimeout(delaySearch);
+  }, [searchQuery]);
 
   const formatRupiah = (number: number): string => {
     return new Intl.NumberFormat('id-ID', {
@@ -143,6 +235,7 @@ export default function HomeScreen({ navigation }: any) {
 
   const buildPaymentPayload = () => {
     return {
+      id: currentUser?.username || 'unknown',
       items: cart.map(item => ({
         id: item.id,
         qty: item.qty,
@@ -152,12 +245,10 @@ export default function HomeScreen({ navigation }: any) {
 
   const sendPaymentToMQTT = () => {
     if (!savedCartNumber) {
-      Alert.alert('Error', 'Keranjang belum disimpan');
       return;
     }
 
     if (cart.length === 0) {
-      Alert.alert('Error', 'Keranjang masih kosong');
       return;
     }
 
@@ -166,16 +257,14 @@ export default function HomeScreen({ navigation }: any) {
 
     try {
       mqttService.publish(topic, JSON.stringify(payload));
-      console.log('MQTT payment sent:', topic, payload);
-      //Alert.alert('Sukses', 'Data pembayaran berhasil dikirim');
+      console.log('📤 MQTT payment sent:', topic, payload);
     } catch (error) {
       console.error('MQTT publish error:', error);
-      Alert.alert('Error', 'Gagal mengirim data ke MQTT');
     }
   };
 
-  // Fetch product from Firestore
-  const fetchProductFromFirestore = async (productId: string): Promise<Product | null> => {
+  // Fetch product by ID from Firestore
+  const fetchProductById = async (productId: string): Promise<Product | null> => {
     try {
       const productRef = doc(db, 'products', productId.toUpperCase());
       const productSnap = await getDoc(productRef);
@@ -198,15 +287,20 @@ export default function HomeScreen({ navigation }: any) {
     }
   };
 
-  // Add product from Firestore
-  const addProductFromFirestore = async (productId: string) => {
-    const product = await fetchProductFromFirestore(productId);
+  // Add product by ID (for MQTT)
+  const addProductById = async (productId: string) => {
+    const product = await fetchProductById(productId);
 
     if (!product) {
       Alert.alert('Error', 'ID Produk tidak ditemukan di database!');
       return;
     }
 
+    addProductToCart(product);
+  };
+
+  // Add product to cart (generic function)
+  const addProductToCart = (product: Product) => {
     setCart(prevCart => {
       const existing = prevCart.find(item => item.id === product.id);
 
@@ -222,14 +316,21 @@ export default function HomeScreen({ navigation }: any) {
     });
   };
 
-  // Add product manually
-  const addProduct = async () => {
-    if (!productId.trim()) {
-      Alert.alert('Error', 'Masukkan ID Produk!');
-      return;
-    }
-    await addProductFromFirestore(productId.trim());
-    setProductId('');
+  // Add product from search result
+  const addProductFromSearch = (searchResult: SearchResult) => {
+    const product: Product = {
+      id: searchResult.id,
+      name: searchResult.name,
+      price: searchResult.price,
+      qty: 1
+    };
+
+    addProductToCart(product);
+    setSearchQuery('');
+    setSearchResults([]);
+    setShowSearchModal(false);
+    
+    Alert.alert('Berhasil', `${product.name} ditambahkan ke keranjang`);
   };
 
   const increaseQty = (id: string) => {
@@ -296,40 +397,15 @@ export default function HomeScreen({ navigation }: any) {
     );
   };
 
-  // Save transaction to Firestore
-  const saveTransaction = async () => {
-    if (cart.length === 0) {
-      Alert.alert('Error', 'Keranjang masih kosong!');
-      return;
-    }
-
-    if (!paid) {
-      Alert.alert('Error', 'Transaksi belum dibayar!');
-      return;
-    }
-
-    try {
-      const transaction = {
-        cartNumber: savedCartNumber || 'N/A',
-        cashier: currentUser?.username || 'Unknown',
-        items: cart.map(item => ({
-          id: item.id,
-          name: item.name,
-          price: item.price,
-          qty: item.qty,
-          subtotal: item.price * item.qty
-        })),
-        totalItems,
-        totalPrice,
-        timestamp: serverTimestamp(),
-        createdAt: new Date().toISOString()
-      };
-
-      await addDoc(collection(db, 'transactions'), transaction);
-      
-      Alert.alert('Berhasil', 'Transaksi berhasil disimpan!', [
+  // Reset transaction and start new
+  const handleNewTransaction = () => {
+    Alert.alert(
+      'Transaksi Baru',
+      'Mulai transaksi baru?',
+      [
+        { text: 'Batal', style: 'cancel' },
         {
-          text: 'OK',
+          text: 'Ya',
           onPress: () => {
             setCart([]);
             setPaid(false);
@@ -337,14 +413,11 @@ export default function HomeScreen({ navigation }: any) {
             setSavedCartNumber('');
           }
         }
-      ]);
-    } catch (error) {
-      console.error('Error saving transaction:', error);
-      Alert.alert('Error', 'Gagal menyimpan transaksi');
-    }
+      ]
+    );
   };
 
-  const renderItem = ({ item }: { item: Product }) => (
+  const renderCartItem = ({ item }: { item: Product }) => (
     <View style={styles.productItem}>
       <View style={styles.productInfo}>
         <Text style={styles.productName}>{item.name}</Text>
@@ -381,8 +454,32 @@ export default function HomeScreen({ navigation }: any) {
     </View>
   );
 
+  const renderSearchResult = ({ item }: { item: SearchResult }) => (
+    <View style={styles.searchResultItem}>
+      <View style={styles.searchResultInfo}>
+        <Text style={styles.searchResultName}>{item.name}</Text>
+        <Text style={styles.searchResultId}>ID: {item.id}</Text>
+        <Text style={styles.searchResultPrice}>{formatRupiah(item.price)}</Text>
+      </View>
+      <TouchableOpacity
+        style={styles.searchResultAddButton}
+        onPress={() => addProductFromSearch(item)}
+      >
+        <Text style={styles.searchResultAddButtonText}>+ Tambah</Text>
+      </TouchableOpacity>
+    </View>
+  );
+
   return (
     <View style={styles.container}>
+      {/* Logo di pojok kanan atas */}
+      {/* <View style={styles.logoContainer}>
+        <Image 
+          source={require("../assets/images/logo.png")} 
+          style={styles.logo}
+        />
+      </View> */}
+
       <View style={styles.topNav}>
         <TouchableOpacity onPress={toggleSidebar}>
           <Text style={styles.navText}>☰ Menu</Text>
@@ -402,8 +499,13 @@ export default function HomeScreen({ navigation }: any) {
             keyboardType="numeric"
             style={styles.cartNumberInput}
             maxLength={3}
+            editable={!paid}
           />
-          <TouchableOpacity onPress={saveCartNumber} style={styles.cartNumberButton}>
+          <TouchableOpacity 
+            onPress={saveCartNumber} 
+            style={styles.cartNumberButton}
+            disabled={paid}
+          >
             <Text style={styles.cartNumberButtonText}>✓</Text>
           </TouchableOpacity>
         </View>
@@ -417,24 +519,62 @@ export default function HomeScreen({ navigation }: any) {
 
       <View style={styles.form}>
         <TextInput
-          placeholder="Masukkan ID Produk"
-          value={productId}
-          onChangeText={setProductId}
+          placeholder="Cari nama produk..."
+          value={searchQuery}
+          onChangeText={setSearchQuery}
           style={styles.input}
-          autoCapitalize="characters"
+          autoCapitalize="none"
+          editable={!paid}
         />
-        <TouchableOpacity onPress={addProduct} style={styles.addButton}>
-          <Text style={styles.addText}>Tambah</Text>
-        </TouchableOpacity>
+        {isSearching && (
+          <View style={styles.searchingIndicator}>
+            <Text style={styles.searchingText}>🔍</Text>
+          </View>
+        )}
       </View>
 
-      <Text style={styles.infoText}>Scan menggunakan keranjang / masukkan manual ID produk</Text>
+      <Text style={styles.infoText}>
+        {searchResults.length > 0 
+          ? `${searchResults.length} produk ditemukan` 
+          : 'Ketik minimal 2 huruf untuk mencari produk'}
+      </Text>
+
+      {/* Search Results Modal */}
+      <Modal
+        visible={showSearchModal}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowSearchModal(false)}
+      >
+        <Pressable 
+          style={styles.searchModalOverlay}
+          onPress={() => setShowSearchModal(false)}
+        >
+          <View style={styles.searchModalContent}>
+            <View style={styles.searchModalHeader}>
+              <Text style={styles.searchModalTitle}>
+                Hasil Pencarian ({searchResults.length})
+              </Text>
+              <TouchableOpacity onPress={() => setShowSearchModal(false)}>
+                <Text style={styles.searchModalCloseButton}>✕</Text>
+              </TouchableOpacity>
+            </View>
+            
+            <FlatList
+              data={searchResults}
+              keyExtractor={(item) => item.id}
+              renderItem={renderSearchResult}
+              style={styles.searchResultsList}
+            />
+          </View>
+        </Pressable>
+      </Modal>
 
       <FlatList 
         data={cart} 
         keyExtractor={(item) => item.id} 
-        renderItem={renderItem}
-        contentContainerStyle={{ paddingBottom: 140 }}
+        renderItem={renderCartItem}
+        contentContainerStyle={{ paddingBottom: 200 }}
       />
 
       {cart.length > 0 && (
@@ -445,22 +585,36 @@ export default function HomeScreen({ navigation }: any) {
         </View>
       )}
 
+      {/* Payment Status Button - Read Only */}
       <TouchableOpacity
         style={[styles.paymentButton, paid && styles.paymentButtonPaid]}
-        onPress={() => setPaid(!paid)}
+        disabled={true}
       >
         <Text style={styles.paymentText}>
-          {paid ? '✓ Sudah Dibayar' : '○ Belum Dibayar'}
+          {paid ? '✓ Sudah Dibayar' : '○ Menunggu Pembayaran Kasir'}
         </Text>
       </TouchableOpacity>
 
+      {!paid && cart.length > 0 && (
+        <Text style={styles.paymentInfoText}>
+          Silakan lakukan pembayaran di kasir
+        </Text>
+      )}
+
       {paid && (
-        <TouchableOpacity
-          style={styles.saveTransactionButton}
-          onPress={saveTransaction}
-        >
-          <Text style={styles.saveTransactionText}>💾 Simpan Transaksi</Text>
-        </TouchableOpacity>
+        <View style={styles.successMessage}>
+          <Text style={styles.successText}>
+            ✓ Transaksi telah selesai dan tersimpan
+          </Text>
+          <TouchableOpacity
+            style={styles.newTransactionButton}
+            onPress={handleNewTransaction}
+          >
+            <Text style={styles.newTransactionText}>
+              🛒 Mulai Transaksi Baru
+            </Text>
+          </TouchableOpacity>
+        </View>
       )}
 
       {open && (

@@ -38,60 +38,63 @@ export const homeStyles = StyleSheet.create({
     marginBottom: 16,
     letterSpacing: -0.5,
   },
+
   /* TITLE ROW WITH CART NUMBER */
-titleRow: {
-  flexDirection: "row",
-  justifyContent: "space-between",
-  alignItems: "center",
-  marginBottom: 8,
-},
+  titleRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 8,
+  },
 
-cartNumberContainer: {
-  flexDirection: "row",
-  alignItems: "center",
-  gap: 6,
-},
+  cartNumberContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
 
-cartNumberInput: {
-  width: 55,
-  height: 40,
-  borderWidth: 2,
-  borderColor: "#2563EB",
-  borderRadius: 8,
-  textAlign: "center",
-  fontSize: 15,
-  fontWeight: "600",
-  backgroundColor: "#FFFFFF",
-  color: "#1E293B",
-},
+  cartNumberInput: {
+    width: 55,
+    height: 40,
+    borderWidth: 2,
+    borderColor: "#2563EB",
+    borderRadius: 8,
+    textAlign: "center",
+    fontSize: 15,
+    fontWeight: "600",
+    backgroundColor: "#FFFFFF",
+    color: "#1E293B",
+  },
 
-cartNumberButton: {
-  backgroundColor: "#10B981",
-  width: 40,
-  height: 40,
-  borderRadius: 8,
-  justifyContent: "center",
-  alignItems: "center",
-  elevation: 2,
-},
+  cartNumberButton: {
+    backgroundColor: "#10B981",
+    width: 40,
+    height: 40,
+    borderRadius: 8,
+    justifyContent: "center",
+    alignItems: "center",
+    elevation: 2,
+  },
 
-cartNumberButtonText: {
-  color: "#FFFFFF",
-  fontSize: 18,
-  fontWeight: "700",
-},
+  cartNumberButtonText: {
+    color: "#FFFFFF",
+    fontSize: 18,
+    fontWeight: "700",
+  },
 
-savedCartText: {
-  fontSize: 14,
-  color: "#10B981",
-  fontWeight: "600",
-  marginBottom: 12,
-},
+  savedCartText: {
+    fontSize: 14,
+    color: "#10B981",
+    fontWeight: "600",
+    marginBottom: 12,
+  },
+
   /* FORM INPUT */
   form: {
     flexDirection: "row",
     marginBottom: 8,
     gap: 10,
+    position: "relative",
   },
 
   input: {
@@ -150,63 +153,63 @@ savedCartText: {
   },
 
   productName: {
-  fontSize: 20,  // UBAH dari 18 ke 20
-  fontWeight: "700",
-  color: "#1E293B",
-  marginBottom: 4,
+    fontSize: 20,
+    fontWeight: "700",
+    color: "#1E293B",
+    marginBottom: 4,
   },
 
-productId: {
-  fontSize: 12,
-  color: "#94A3B8",
-  marginBottom: 6,
+  productId: {
+    fontSize: 12,
+    color: "#94A3B8",
+    marginBottom: 6,
   },
 
-productPrice: {
-  fontSize: 19,  // UBAH dari 17 ke 19
-  fontWeight: "600",
-  color: "#2563EB",
-  marginBottom: 12,
+  productPrice: {
+    fontSize: 19,
+    fontWeight: "600",
+    color: "#2563EB",
+    marginBottom: 12,
   },
 
-  /* QTY ROW */
   /* QTY + DELETE ROW */
-qtyDeleteRow: {
-  flexDirection: "row",
-  justifyContent: "space-between",
-  alignItems: "center",
-  marginTop: 4,
-},
+  qtyDeleteRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginTop: 4,
+  },
 
-qtyControls: {
-  flexDirection: "row",
-  alignItems: "center",
-  gap: 12,
-},
+  qtyControls: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
 
-qtyButton: {
-  backgroundColor: "#2563EB",
-  width: 36,
-  height: 36,
-  borderRadius: 8,
-  justifyContent: "center",
-  alignItems: "center",
-  elevation: 2,
-},
+  qtyButton: {
+    backgroundColor: "#2563EB",
+    width: 36,
+    height: 36,
+    borderRadius: 8,
+    justifyContent: "center",
+    alignItems: "center",
+    elevation: 2,
+  },
 
-qtyText: {
-  color: "#FFFFFF",
-  fontWeight: "700",
-  fontSize: 18,
-},
+  qtyText: {
+    color: "#FFFFFF",
+    fontWeight: "700",
+    fontSize: 18,
+  },
 
-qtyNumber: {
-  fontSize: 17,
-  fontWeight: "600",
-  color: "#1E293B",
-  minWidth: 30,
-  textAlign: "center",
-},
+  qtyNumber: {
+    fontSize: 17,
+    fontWeight: "600",
+    color: "#1E293B",
+    minWidth: 30,
+    textAlign: "center",
+  },
+
   deleteButton: {
     backgroundColor: "#EF4444",
     paddingHorizontal: 14,
@@ -268,6 +271,29 @@ qtyNumber: {
     color: "#FFFFFF",
     fontSize: 17,
     fontWeight: "700",
+  },
+
+  saveTransactionButton: {
+    position: "absolute",
+    bottom: 80,
+    left: 16,
+    right: 16,
+    backgroundColor: "#2196F3",
+    paddingVertical: 14,
+    borderRadius: 8,
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+
+  saveTransactionText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "bold",
   },
 
   /* OVERLAY (full screen) */
@@ -338,25 +364,168 @@ qtyNumber: {
     paddingVertical: 10,
     color: "#2563EB",
   },
-  saveTransactionButton: {
-    position: 'absolute' as const,
-    bottom: 80,
-    left: 16,
-    right: 16,
-    backgroundColor: '#2196F3',
-    paddingVertical: 14,
+
+  /* SEARCH MODAL STYLES */
+  searchModalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 20,
+  },
+
+  searchModalContent: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 16,
+    width: "100%",
+    maxHeight: "70%",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+
+  searchModalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: 18,
+    borderBottomWidth: 1,
+    borderBottomColor: "#E2E8F0",
+    backgroundColor: "#F8F9FA",
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+  },
+
+  searchModalTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#1E293B",
+  },
+
+  searchModalCloseButton: {
+    fontSize: 24,
+    color: "#64748B",
+    fontWeight: "700",
+    paddingHorizontal: 8,
+  },
+
+  searchResultsList: {
+    maxHeight: 400,
+  },
+
+  searchResultItem: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "#F1F5F9",
+  },
+
+  searchResultInfo: {
+    flex: 1,
+  },
+
+  searchResultName: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#1E293B",
+    marginBottom: 4,
+  },
+
+  searchResultId: {
+    fontSize: 12,
+    color: "#94A3B8",
+    marginBottom: 4,
+  },
+
+  searchResultPrice: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: "#2563EB",
+  },
+
+  searchResultAddButton: {
+    backgroundColor: "#10B981",
+    paddingHorizontal: 18,
+    paddingVertical: 10,
     borderRadius: 8,
-    alignItems: 'center' as const,
-    justifyContent: 'center' as const,
-    shadowColor: '#000',
+    marginLeft: 12,
+    elevation: 2,
+    shadowColor: "#10B981",
+    shadowOpacity: 0.3,
     shadowOffset: { width: 0, height: 2 },
+  },
+
+  searchResultAddButtonText: {
+    color: "#FFFFFF",
+    fontWeight: "700",
+    fontSize: 14,
+  },
+
+  searchingIndicator: {
+    position: "absolute",
+    right: 12,
+    top: 12,
+  },
+
+  searchingText: {
+    fontSize: 20,
+  },
+  paymentInfoText: {
+  textAlign: 'center',
+  color: '#666',
+  fontSize: 12,
+  marginTop: 8,
+  marginBottom: 16,
+},
+successMessage: {
+  backgroundColor: '#d4edda',
+  padding: 16,
+  borderRadius: 8,
+  margin: 16,
+  alignItems: 'center',
+},
+successText: {
+  color: '#155724',
+  fontSize: 16,
+  fontWeight: 'bold',
+  marginBottom: 12,
+},
+newTransactionButton: {
+  backgroundColor: '#28a745',
+  paddingVertical: 12,
+  paddingHorizontal: 24,
+  borderRadius: 8,
+},
+newTransactionText: {
+  color: 'white',
+  fontWeight: 'bold',
+  fontSize: 14,
+},
+// Logo Container
+  logoContainer: {
+    position: 'absolute',
+    top: 16,
+    right: 16,
+    zIndex: 1000,
+    backgroundColor: 'white',
+    borderRadius: 50,
+    padding: 4,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
     shadowOpacity: 0.25,
-    shadowRadius: 4,
+    shadowRadius: 3.84,
     elevation: 5,
   },
-  saveTransactionText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold' as const,
+  logo: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
   },
 });

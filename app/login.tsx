@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ScrollView } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ScrollView, Image } from 'react-native';
 import { router } from 'expo-router';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
@@ -105,10 +105,7 @@ export default function LoginScreen() {
   return (
     <ScrollView contentContainerStyle={styles.scrollContainer}>
       <View style={styles.container}>
-        <Text style={styles.title}>
-          {isRegister ? '📝 Daftar Akun' : '🛒 Supermarket Login'}
-        </Text>
-        
+                <Image source={require('../assets/images/logo2.png')} style={styles.logo} />
         <View style={styles.formContainer}>
           <TextInput
             style={styles.input}
@@ -224,5 +221,9 @@ const styles = StyleSheet.create({
     color: '#1976D2',
     fontSize: 16,
     textDecorationLine: 'underline',
+  },
+  logo: {
+    width: 150,
+    height: 150,
   },
 });

@@ -5,13 +5,12 @@ import { getAuth } from 'firebase/auth';
 
 // TODO: Ganti dengan konfigurasi Firebase Anda
 const firebaseConfig = {
-  apiKey: "AIzaSyDptYQiTEMlo5Vgzke7SWT-iBE2yf5d1g0",
-  authDomain: "myfirts-a5746.firebaseapp.com",
-  projectId: "myfirts-a5746",
-  storageBucket: "myfirts-a5746.firebasestorage.app",
-  messagingSenderId: "513666249107",
-  appId: "1:513666249107:web:b846bd82e8586423b3b866",
-  measurementId: "G-158H4MHBCV"
+  apiKey: "AIzaSyBoxRyW-dxTZmjvSGQe32P2-r2PiVJ-oe0",
+  authDomain: "allyshop-b128a.firebaseapp.com",
+  projectId: "allyshop-b128a",
+  storageBucket: "allyshop-b128a.firebasestorage.app",
+  messagingSenderId: "376999251984",
+  appId: "1:376999251984:web:15445c2ed9e9cf4fd77a95"
 };
 
 // Initialize Firebase

@@ -7,10 +7,12 @@ import {
   StyleSheet,
   ActivityIndicator,
   ScrollView,
+  Alert
 } from 'react-native';
 import { router } from 'expo-router';
-import { collection, query, orderBy, getDocs, where, Timestamp } from 'firebase/firestore';
+import { collection, query, orderBy, getDocs } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface TransactionItem {
   id: string;
@@ -23,6 +25,7 @@ interface TransactionItem {
 interface Transaction {
   id: string;
   cartNumber: string;
+  cashier: string;
   items: TransactionItem[];
   totalItems: number;
   totalPrice: number;
@@ -37,24 +40,48 @@ interface MonthGroup {
   totalAmount: number;
 }
 
+interface UserData {
+  username: string;
+  emailPhone: string;
+}
+
 export default function HistoryScreen() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [monthlyData, setMonthlyData] = useState<MonthGroup[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedMonth, setSelectedMonth] = useState<string | null>(null);
   const [expandedTransaction, setExpandedTransaction] = useState<string | null>(null);
+  const [currentUser, setCurrentUser] = useState<UserData | null>(null);
 
   useEffect(() => {
-    fetchTransactions();
+    loadUserDataAndFetchTransactions();
   }, []);
 
-  const fetchTransactions = async () => {
+  const loadUserDataAndFetchTransactions = async () => {
+    try {
+      const userDataString = await AsyncStorage.getItem('currentUser');
+      if (userDataString) {
+        const userData = JSON.parse(userDataString);
+        setCurrentUser(userData);
+        // Fetch transactions setelah mendapatkan user data
+        await fetchTransactions(userData.username);
+      } else {
+        Alert.alert('Error', 'User tidak ditemukan. Silakan login kembali.');
+        setLoading(false);
+      }
+    } catch (error) {
+      console.error('Error loading user data:', error);
+      setLoading(false);
+    }
+  };
+
+  const fetchTransactions = async (username: string) => {
     try {
       setLoading(true);
-      const q = query(
-        collection(db, 'transactions'),
-        orderBy('timestamp', 'desc')
-      );
+      
+      // Query dari users/{username}/history
+      const historyRef = collection(db, 'users', username, 'history');
+      const q = query(historyRef, orderBy('timestamp', 'desc'));
 
       const querySnapshot = await getDocs(q);
       const fetchedTransactions: Transaction[] = [];
@@ -70,6 +97,7 @@ export default function HistoryScreen() {
       groupByMonth(fetchedTransactions);
     } catch (error) {
       console.error('Error fetching transactions:', error);
+      Alert.alert('Error', 'Gagal mengambil riwayat transaksi');
     } finally {
       setLoading(false);
     }
@@ -128,6 +156,12 @@ export default function HistoryScreen() {
     );
   };
 
+  const handleRefresh = () => {
+    if (currentUser?.username) {
+      fetchTransactions(currentUser.username);
+    }
+  };
+
   const renderTransactionItem = ({ item }: { item: Transaction }) => {
     const isExpanded = expandedTransaction === item.id;
 
@@ -140,6 +174,7 @@ export default function HistoryScreen() {
           <View style={styles.transactionHeaderLeft}>
             <Text style={styles.cartNumberText}>🛒 #{item.cartNumber}</Text>
             <Text style={styles.dateText}>{formatDate(item.createdAt)}</Text>
+            <Text style={styles.cashierText}>Kasir: {item.cashier}</Text>
           </View>
           <View style={styles.transactionHeaderRight}>
             <Text style={styles.totalPriceText}>{formatRupiah(item.totalPrice)}</Text>
@@ -233,8 +268,13 @@ export default function HistoryScreen() {
         <TouchableOpacity onPress={() => router.back()}>
           <Text style={styles.backButton}>← Kembali</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Riwayat Transaksi</Text>
-        <TouchableOpacity onPress={fetchTransactions}>
+        <View style={styles.headerCenter}>
+          <Text style={styles.headerTitle}>Riwayat Transaksi</Text>
+          {currentUser && (
+            <Text style={styles.headerSubtitle}>{currentUser.username}</Text>
+          )}
+        </View>
+        <TouchableOpacity onPress={handleRefresh}>
           <Text style={styles.refreshButton}>↻</Text>
         </TouchableOpacity>
       </View>
@@ -270,8 +310,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#4CAF50',
     paddingHorizontal: 16,
-    paddingVertical: 16,
+    paddingVertical: 12,
     paddingTop: 50,
+  },
+  headerCenter: {
+    alignItems: 'center',
+    flex: 1,
   },
   backButton: {
     color: '#fff',
@@ -282,6 +326,12 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 18,
     fontWeight: 'bold',
+  },
+  headerSubtitle: {
+    color: '#fff',
+    fontSize: 12,
+    marginTop: 2,
+    opacity: 0.9,
   },
   refreshButton: {
     color: '#fff',
@@ -371,6 +421,11 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#666',
     marginTop: 4,
+  },
+  cashierText: {
+    fontSize: 12,
+    color: '#888',
+    marginTop: 2,
   },
   totalPriceText: {
     fontSize: 16,
